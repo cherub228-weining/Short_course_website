@@ -1,0 +1,39 @@
+name: Check teaching materials
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-r:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install R and teaching dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends r-base-core r-cran-mvtnorm r-cran-glmnet r-cran-ggplot2 r-cran-rmarkdown pandoc
+      - name: Unpack the teaching bundle
+        run: unzip -q All_Teaching_Materials.zip -d teaching-check
+      - name: Check the participant pack independently
+        run: |
+          unzip -q R_Exercises_Participant_Pack.zip -d participant-check
+          cd participant-check
+          Rscript code/R/check_setup.R
+          Rscript exercises/participant_template.R
+          Rscript -e 'rmarkdown::render("exercises/Participant_Notebook.Rmd", quiet=TRUE)'
+      - name: Run numerical checks and reproduce the core demonstrations
+        working-directory: teaching-check
+        run: |
+          Rscript scripts/check_course.R
+          Rscript exercises/instructor_solutions.R
+          Rscript code/R/run_course.R
+      - name: Run advanced demonstration checks
+        working-directory: teaching-check/advanced_demo
+        run: |
+          Rscript -e 'source("00_check_install.R"); stopifnot(ok)'
+          Rscript 01_demo_quadratic.R
+          Rscript 02_demo_cubic.R
+          Rscript 03_exercises.R

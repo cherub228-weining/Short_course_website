@@ -1,0 +1,105 @@
+---
+title: "Causal state-dependent local projections"
+subtitle: "Participant R notebook"
+author: "Weining Wang and Xiyu Jiao"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+# During knitting this file lives in exercises/. In RStudio open the Rproj.
+root <- if (file.exists("code/R/exercise_setup.R")) "." else ".."
+root <- normalizePath(root, mustWork=TRUE)
+knitr::opts_knit$set(root.dir=root)
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# Start here
+
+Extract the participant pack and open `Local_Projections.Rproj`.
+The core tasks take 30 minutes. Write your interpretations below each prompt.
+All observations are **synthetic**. The stored `z` is already the pre-shock state;
+do not lag it again. The response is per one-unit shock.
+
+```{r load}
+source("code/R/exercise_setup.R")
+```
+
+# Sample and timing (7 minutes)
+
+```{r sample}
+nrow(d)
+length(unique(d$id)); length(unique(d$t))
+anyDuplicated(d[c("id", "t")])
+quantile(d$z,c(.05,.5,.95))
+all(tapply(d$x,d$t,function(v) length(unique(v))) == 1)
+```
+
+**Your answer:** Why do 24,000 panel rows not supply 24,000 independent shocks?
+Which variables are predetermined?
+
+# Impact response (8 minutes)
+
+```{r impact}
+impact <- estimate_horizon(0,Jset=4:10)
+impact$J
+grid <- seq(-.8,.8,length.out=161)
+curve <- infer_curve(impact,grid)
+```
+
+Complete the plot in the chunk below. The theoretical response is `1-grid^2`.
+
+```{r your-plot}
+# TODO: plot curve$estimate against curve$z.
+# TODO: add the theoretical response and a legend.
+```
+
+**Your answer:** Compare the centre and edges. Does a good fit establish identification?
+
+# Contrasts and uncertainty (8 minutes)
+
+```{r contrast}
+contrast <- infer_contrast(impact,zA=0,zB=.75)
+contrast
+j <- which.min(abs(curve$z))
+curve[j,c("estimate","se","point_lower","point_upper","band_lower","band_upper")]
+```
+
+**Your answer:** Calculate the population contrast by hand. Explain the difference
+between the pointwise interval and the state-grid band. Does the band cover all
+horizons jointly? Does one interval establish nominal coverage?
+
+# Sensitivity and interpretation (7 minutes)
+
+```{r sensitivity}
+fixed <- estimate_horizon(0,Jset=7)
+infer_contrast(fixed,zA=0,zB=.75)
+```
+
+**Your answer:** Compare with the AIC-selected model. Write a short results
+paragraph giving the shock unit, horizon, state contrast and uncertainty measure.
+State that the data are synthetic.
+
+# Optional extensions
+
+Run the following when ready; they are excluded from the default knit.
+
+```{r extensions, eval=FALSE}
+h4 <- estimate_horizon(4,Jset=4:10)
+infer_contrast(h4)
+b4 <- estimate_horizon(4,Jset=7,bandwidth=4)
+b8 <- estimate_horizon(4,Jset=7,bandwidth=8)
+rbind(infer_contrast(b4),infer_contrast(b8))
+endog <- simulate_panel(state="endogenous")
+efit <- estimate_horizon(0,Jset=4:10,data=endog)
+infer_contrast(efit)
+nonlinear_shift_demo(z=0,delta=1,cubic=.25)
+```
+
+For the full questions, use the PDF handout. AIC selection alone does not control
+approximation bias. Generated-shock uncertainty and weak instruments are outside
+this practical. Do not interpret initial-state comparisons as interventions on the state.
