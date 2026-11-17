@@ -15,3 +15,11 @@ The original private project remains a separate repository.
 
 Published PDFs and core R scripts preserve the existing teaching versions.
 This website, quick-start guide and participant notebook were prepared 13 November 2026.
+
+## Enriched course update — 17 November 2026
+
+The course deck is the 105-slide edition expanded 16 November, for the
+23 November DG ECFIN course. It includes defence R&D, uncertainty and
+labour-supply examples. New arithmetic examples are in
+`code/ECFIN_worked_examples.R`; run them in a fresh R process with
+`Rscript code/ECFIN_worked_examples.R`.
